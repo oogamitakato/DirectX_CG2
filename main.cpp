@@ -628,7 +628,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
 		R += 0.01f;
-		constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
+		constMapMaterial->color = XMFLOAT4(R, 1.0f - R, 0, 0.8f);//RGBAで半透明の赤
 
 		//定数バッファビュー(CBV)の定数コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
