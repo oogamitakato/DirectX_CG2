@@ -249,9 +249,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点データ
 	XMFLOAT3 vertices[] = {
 		{ -0.5f, -0.5f, 0.0f },//左下 インデックス0
-		{ -0.5f, +0.5f, 0.0f },//左上 インデックス1
-		{ +0.5f, -0.5f, 0.0f },//右下 インデックス2
-		{ +0.5f, +0.5f, 0.0f },//右上 インデックス3
+		{ +0.5f, -0.5f, 0.0f },//右下 インデックス1
+		{ -0.5f, -0.0f, 0.0f },//左中 インデックス2
+		{ +0.5f, -0.0f, 0.0f },//右中 インデックス3
+		{ -0.5f, +0.5f, 0.0f },//左上 インデックス4
+		{ +0.5f, +0.5f, 0.0f },//右上 インデックス5
 	};
 
 	//インデックスデータ
@@ -259,6 +261,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		0,1,2,//三角形1つ目
 		1,2,3,//三角形2つ目
+		2,3,4,//3つ目
+		3,4,5,//4つ目
+		4,5,2,
+		5,2,3,
+		2,3,0,
+		3,0,1,
 	};
 
 	//頂点データ全体のサイズ＝頂点データ一つ分のサイズ＋頂点データの要素数
@@ -622,13 +630,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		//プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 
 		//頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
-		R += 0.01f;
-		constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
+		//R += 0.01f;
+		constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);//RGBAで半透明の赤
 
 		//定数バッファビュー(CBV)の定数コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
