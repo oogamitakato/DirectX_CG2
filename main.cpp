@@ -6,8 +6,6 @@
 #include <string>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
-using namespace DirectX;
-#define DIRECTINPUT_VERSION 0x0800 //directInputのバージョン指定
 #include <dinput.h>
 
 #pragma comment(lib, "d3d12.lib")
@@ -15,6 +13,12 @@ using namespace DirectX;
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
+
+#define DIRECTINPUT_VERSION 0x0800 //directInputのバージョン指定
+
+using namespace DirectX;
+
+const float PI = 3.141592f;
 
 //定数バッファ用データ構造体(マテリアル)
 struct ConstBufferDateMaterial {
@@ -244,21 +248,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(resule));
 
-	//描画初期化ここから
-
-	//頂点データ
+	// 頂点データ
 	XMFLOAT3 vertices[] = {
-		{ -0.5f, -0.5f, 0.0f },//左下 インデックス0
-		{ -0.5f, +0.5f, 0.0f },//左上 インデックス1
-		{ +0.5f, -0.5f, 0.0f },//右下 インデックス2
-		{ +0.5f, +0.5f, 0.0f },//右上 インデックス3
+		{-0.5f, -0.5f, 0.0f}, // 左下
+		{-0.5f, +0.5f, 0.0f}, // 左上
+		{+0.5f, -0.5f, 0.0f}, // 右下
 	};
+
+	float transformX = 0.0f;
+	float transformY = 0.0f;
+	float rotation = 0.0f;
+	float scale = 1.0f;
+
+	float affin[3][3] = {
+		{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} };
 
 	//インデックスデータ
 	uint16_t indices[] =
 	{
 		0,1,2,//三角形1つ目
-		1,2,3,//三角形2つ目
+		//1,2,3,//三角形2つ目
 	};
 
 	//頂点データ全体のサイズ＝頂点データ一つ分のサイズ＋頂点データの要素数
@@ -364,10 +373,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMFLOAT3* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
-	//全頂点に対して
-	for (int i = 0; i < _countof(vertices); i++) {
-		vertMap[i] = vertices[i];	//座標をコピー
-	}
+	
 	//繋がりを解除
 	vertBuff->Unmap(0, nullptr);
 
@@ -559,11 +565,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		keyboard->Acquire();
 
 		//全キーの入力状態を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
+		BYTE keys[256] = {};
+		keyboard->GetDeviceState(sizeof(keys), keys);
 
 		//数字の0キーが押されていたら
-		if (key[DIK_0])
+		if (keys[DIK_0])
 		{
 			OutputDebugStringA("Hit 0\n");//出力ウィンドウに「Hit 0」と表示
 		}
@@ -587,7 +593,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3 画面クリア           R      G     B     A
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };
 
-		if (key[DIK_SPACE])//スペースキーが押されていたら
+		if (keys[DIK_SPACE])//スペースキーが押されていたら
 		{
 			clearColor[0] = 1.0f;
 			clearColor[1] = 0.5f;	//画面クリアカラーを変える
@@ -595,6 +601,78 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		transformX = 0.0f;
+		transformY = 0.0f;
+		rotation = 0.0f;
+		scale = 1.0f;
+
+		// キー入力
+
+		//平行移動
+		if (keys[DIK_W]) {
+			transformY += 0.05f;
+		}
+
+		if (keys[DIK_S]) {
+			transformY -= 0.05f;
+		}
+
+		if (keys[DIK_A]) {
+			transformX -= 0.05f;
+		}
+
+		if (keys[DIK_D]) {
+			transformX += 0.05f;
+		}
+
+		// 拡大縮小
+		if (keys[DIK_Z]) {
+			scale -= 0.1f;
+		}
+
+		if (keys[DIK_C]) {
+			scale += 0.1f;
+		}
+
+
+		// 回転
+		if (keys[DIK_Q]) {
+			rotation -= PI / 32;
+		}
+
+		if (keys[DIK_E]) {
+			rotation += PI / 32;
+		}
+
+
+		// アフィン行列の生成
+		affin[0][0] = scale * cos(rotation);
+		affin[0][1] = scale * (-sin(rotation));
+		affin[0][2] = transformX;
+
+		affin[1][0] = scale * sin(rotation);
+		affin[1][1] = scale * cos(rotation);
+		affin[1][2] = transformY;
+
+		affin[2][0] = 0.0f;
+		affin[2][1] = 0.0f;
+		affin[2][2] = 1.0f;
+
+		// アフィン変換
+		for (int i = 0; i < _countof(vertices); i++) {
+			vertices[i].x = vertices[i].x * affin[0][0] +
+				vertices[i].y * affin[0][1] + 1.0f * affin[0][2];
+			vertices[i].y = vertices[i].x * affin[1][0] +
+				vertices[i].y * affin[1][1] + 1.0f * affin[1][2];
+			vertices[i].z = vertices[i].x * affin[2][0] +
+				vertices[i].y * affin[2][1] + 1.0f * affin[2][2];
+		}
+
+		//全頂点に対して
+		for (int i = 0; i < _countof(vertices); i++) {
+			vertMap[i] = vertices[i];	//座標をコピー
+		}
 		//// 4 描画コマンドここから
 
 		//ビューポート設定コマンド
@@ -627,7 +705,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
-		R += 0.01f;
+		//R += 0.01f;
 		constMapMaterial->color = XMFLOAT4(R, 1.0f - R, 0, 0.8f);//RGBAで半透明の赤
 
 		//定数バッファビュー(CBV)の定数コマンド
@@ -639,7 +717,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//描画コマンド
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
 
-		//// 4 描画コマンドここまで
+		// 4 描画コマンドここまで
 
 		// 5 リソースバリアを戻す
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態から
