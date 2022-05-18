@@ -23,4 +23,7 @@
     <FxCompile Include="BasicPS.hlsl" />
     <FxCompile Include="BasicVS.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Basic.hlsli" />
+  </ItemGroup>
 </Project>

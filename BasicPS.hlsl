@@ -1,9 +1,9 @@
-cbuffer ConstBufferDateMaterial : register(b0)
-{
-	float4 color;//色(RGBA)
-}
+#include "Basic.hlsli"
 
-float4 main() : SV_TARGET
+Texture2D<float4> tex : register(t0);	//0番スロットに指定されたテクスチャ
+SamplerState smp : register(s0);		//0番スロットに指定されたサンプラー
+
+float4 main(VSOutput input) : SV_TARGET
 {
-	return color;
+	return float4(tex.Sample(smp, input.uv) * float4(1.0f,1.0f,0.5f,1.0f));
 }
