@@ -11,6 +11,7 @@ using namespace DirectX;
 #define DIRECTINPUT_VERSION 0x0800 //directInputのバージョン指定
 #include <dinput.h>
 #include "Mesh.h"
+#include "Global.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -51,10 +52,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//コンソールへの文字出力
 	OutputDebugStringA("Hello,DirectX!!\n");
-
-	//ウィンドウサイズ
-	const int window_width = 1280;//横幅
-	const int window_height = 720;//縦幅
 
 	//ウィンドウクラスの設定
 	WNDCLASSEX w{};
@@ -276,6 +273,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 			OutputDebugStringA("Hit 0\n");//出力ウィンドウに「Hit 0」と表示
 		}
+
+		mesh->Update(keyboard);
 
 		//バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();

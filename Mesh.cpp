@@ -5,6 +5,7 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXTex.h>
+
 using namespace DirectX;
 
 Mesh::Mesh(ID3D12Device* device)
@@ -237,16 +238,35 @@ Mesh::Mesh(ID3D12Device* device)
 	//単位行列を代入
 	constMapTransform->mat = XMMatrixIdentity();
 
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280.f;
-	constMapTransform->mat.r[1].m128_f32[1] = 2.0f / 720.f;
-	/*constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;*/
+	//並行移動行列の計算
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+		-1.0f, 2.0f / window_width,
+		-2.0f / window_height, 1.0f,
+		0.0f, 1.0f);
+
+	//透視投影行列の計算
+	constMapTransform->mat = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),				//上下画角45度
+		(float)window_width / window_height,	//アスペクト比
+		0.1f, 1000.0f							//前端、奥橋
+	);
+
+	//射影変換行列
+	matProjection =
+		XMMatrixPerspectiveFovLH(
+			XMConvertToRadians(45.0f),				//上下画角45度
+			(float)window_width / window_height,	//アスペクト比
+			0.1f, 1000.0f							//前端、奥橋
+	);
+
+
+	//定数バッファに転送
 
 	//値を書き込むと自動的に転送される
 	float R = 0.0f;
 
 	constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
-
+	
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
@@ -465,9 +485,56 @@ Mesh::Mesh(ID3D12Device* device)
 	assert(SUCCEEDED(result));
 };
 
-void Mesh::Update()
+void Mesh::Update(IDirectInputDevice8* keyboard)
 {
+	//キーボード情報の取得開始
+	keyboard->Acquire();
 
+	//全キーの入力状態を取得する
+	BYTE key[256] = {};
+	keyboard->GetDeviceState(sizeof(key), key);
+
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+	//float angle = 0.0f;//カメラの回転角
+	if (key[DIK_D] || key[DIK_A])
+	{
+		if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+		else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
+
+		//angleラジアンだけY軸周りに回転
+		eye.x = -100 * sinf(angle);
+		eye.z = -100 * cosf(angle);
+		matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+	}
+
+	if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT])
+	{
+		//座標を移動する処理
+		if (key[DIK_UP]) { position.z += 1.0f; }
+		else if (key[DIK_DOWN]) { position.z -= 1.0f; }
+		if (key[DIK_RIGHT]) { position.x += 1.0f; }
+		else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+	}
+
+	matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+	
+	matRot = XMMatrixIdentity();
+	matRot *= XMMatrixRotationZ(XMConvertToRadians(rotation.z));
+	matRot *= XMMatrixRotationX(XMConvertToRadians(rotation.x));
+	matRot *= XMMatrixRotationY(XMConvertToRadians(rotation.y));
+
+	matTrans = XMMatrixTranslation(position.x,position.y,position.z);
+
+	//単位行列を代入
+	matWorld = XMMatrixIdentity();
+
+	matWorld *= matScale;
+	matWorld *= matRot;
+	matWorld *= matTrans;
+
+	//定数バッファに転送
+	constMapTransform->mat = matWorld * matView * matProjection;
 };
 
 void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
