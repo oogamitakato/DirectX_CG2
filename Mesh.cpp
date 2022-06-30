@@ -9,27 +9,6 @@ using namespace DirectX;
 
 Mesh::Mesh(ID3D12Device* device)
 {
-	//頂点データ構造体
-	//struct Vertex
-	//{
-	//	XMFLOAT3 pos;//xyz座標
-	//	XMFLOAT2 uv;//uv座標
-	//};
-
-	////頂点データ
-	//Vertex vertices[] = {
-	//	//x      y      z     
-	//	{{0.0f, 100.0f, 0.0f},{0.0f,1.0f},//左下
-	//	{{0.0f, 0.0f, 0.0f},{0.0f,0.0f}},//左上
-	//	{{100.0f, 100.0f, 0.0f},{1.0f,0.0f}},//右上
-	//	{{100.0f, 0.0f, 0.0f},{1.0f,0.0f}},//右上
-	//};
-
-	//インデックスデータ
-	unsigned short indices[] = {
-		0, 1, 2,
-		1, 2, 3,
-	};
 
 	//横方向ピクセル数
 	const size_t textureWidth = 256;
@@ -251,15 +230,17 @@ Mesh::Mesh(ID3D12Device* device)
 		assert(SUCCEEDED(result));
 
 		//定数バッファのマッピング
-		result = constBuffTransform->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
+		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
 		assert(SUCCEEDED(result));
 
 	}
-	////単位行列を代入
-	//constMapTransform->mat = XMMatrixIdentity();
+	//単位行列を代入
+	constMapTransform->mat = XMMatrixIdentity();
 
-	/*constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280.f;
-	constMapTransform->mat.r[1].m128_f32[1] = 2.0f / 720.f;*/
+	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280.f;
+	constMapTransform->mat.r[1].m128_f32[1] = 2.0f / 720.f;
+	/*constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;*/
 
 	//値を書き込むと自動的に転送される
 	float R = 0.0f;
@@ -459,8 +440,6 @@ Mesh::Mesh(ID3D12Device* device)
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;			//ピクセルシェーダーからのみ使用可能
 
-	//ルートシグネチャ
-	//ID3D12RootSignature* rootSignature;
 	//ルートシグネチャの設定
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -503,7 +482,7 @@ void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
 	//頂点バッファビューの設定コマンド
 	commandList->IASetVertexBuffers(0, 1, &vbView);
 
-	constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//RGBA
+	constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);//RGBA
 
 	//定数バッファビュー(CBV)の定数コマンド
 	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
@@ -520,6 +499,6 @@ void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
 	commandList->IASetIndexBuffer(&ibView);
 
 	//描画コマンド
-	commandList->DrawInstanced(6, 1, 0, 0);
-	//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
+	//commandList->DrawInstanced(6, 1, 0, 0);
+	commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
 };

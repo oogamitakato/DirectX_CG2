@@ -318,6 +318,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//ビューポート設定コマンドを、コマンドリストに積む
 		commandList->RSSetViewports(1, &viewport);
 
+		mesh->Draw(commandList);
+
 		//シザー矩形
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0;									//切り抜き座標左
@@ -327,7 +329,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//シザー矩形設定コマンドを、コマンドリストに積む
 		commandList->RSSetScissorRects(1, &scissorRect);
 
-		mesh->Draw(commandList);
+	
 		//// 4 描画コマンドここまで
 
 		// 5 リソースバリアを戻す

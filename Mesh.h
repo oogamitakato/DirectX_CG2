@@ -21,19 +21,28 @@ public:
 	struct Vertex
 	{
 		XMFLOAT3 pos;//xyz座標
-		//XMFLOAT2 uv;//uv座標
+		XMFLOAT2 uv;//uv座標
 	};
 
 	//メンバ変数
 	HRESULT result;
 	ID3D12Device* device;
+	//頂点データ
 	Vertex vertices[4] = {
 		//x      y      z     
-		{{-0.1f, -0.1f, 0.0f}},//左下
-		{{-0.1f, +0.1f, 0.0f}},//左上
-		{{+0.1f, -0.1f, 0.0f}},//右下
-		{{+0.1f, +0.1f, 0.0f}},//右上
+		{{0.0f, 100.0f, 0.0f},{0.0f,1.0f}},//左下
+		{{0.0f, 0.0f, 0.0f},{0.0f,0.0f}},//左上
+		{{100.0f, 100.0f, 0.0f},{1.0f,1.0f}},//右上
+		{{100.0f, 0.0f, 0.0f},{1.0f,0.0f}},//右上
+
 	};
+
+	//インデックスデータ
+	unsigned short indices[6] = {
+		0, 1, 2,
+		1, 2, 3,
+	};
+
 
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	Vertex* vertMap = nullptr;
@@ -48,7 +57,7 @@ public:
 	ID3D12Resource* constBuffMaterial;
 	ID3D12Resource* constBuffTransform = nullptr;
 	ConstBufferDateTransform* constMapTransform = nullptr;
-	
+
 	//インデックスバッファビューの生成
 	D3D12_INDEX_BUFFER_VIEW ibView{};
 	//設定を元にSRV用デスクリプタヒープを生成
