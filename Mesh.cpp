@@ -240,7 +240,6 @@ Mesh::Mesh(ID3D12Device* device)
 		cbResourceDesc.SampleDesc.Count = 1;
 		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		constBuffMaterial = nullptr;
 		//定数バッファの生成
 		result = device->CreateCommittedResource(
 			&cbHeapProp,//ヒープ設定
@@ -256,11 +255,11 @@ Mesh::Mesh(ID3D12Device* device)
 		assert(SUCCEEDED(result));
 
 	}
-	//単位行列を代入
-	constMapTransform->mat = XMMatrixIdentity();
+	////単位行列を代入
+	//constMapTransform->mat = XMMatrixIdentity();
 
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280.f;
-	constMapTransform->mat.r[1].m128_f32[1] = 2.0f / 720.f;
+	/*constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280.f;
+	constMapTransform->mat.r[1].m128_f32[1] = 2.0f / 720.f;*/
 
 	//値を書き込むと自動的に転送される
 	float R = 0.0f;
@@ -270,10 +269,10 @@ Mesh::Mesh(ID3D12Device* device)
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
-	////全頂点に対して
-	//for (int i = 0; i < _countof(vertices); i++) {
-	//	vertMap[i] = vertices[i];	//座標をコピー
-	//}
+	//全頂点に対して
+	for (int i = 0; i < _countof(vertices); i++) {
+		vertMap[i] = vertices[i];	//座標をコピー
+	}
 	//繋がりを解除
 	vertBuff->Unmap(0, nullptr);
 
@@ -384,143 +383,143 @@ Mesh::Mesh(ID3D12Device* device)
 		= D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	//レンダーターゲットのブレンド設定
-D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
-blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
+	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
+	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
 
-blenddesc.BlendEnable = true;	//ブレンドを有効にする
-blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;	//加算
-blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;		//ソースの値を100%使う
-blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;	//デストの値を0%使う
+	blenddesc.BlendEnable = true;	//ブレンドを有効にする
+	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;	//加算
+	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;		//ソースの値を100%使う
+	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;	//デストの値を0%使う
 
-//加算合成
-blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
-blenddesc.SrcBlend = D3D12_BLEND_ONE;	//ソースの値を100%使う
-blenddesc.DestBlend = D3D12_BLEND_ONE;	//デストの値を100%使う
+	//加算合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE;	//ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE;	//デストの値を100%使う
 
-//減算合成
-blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;	//デストからソースを減算
-blenddesc.SrcBlend = D3D12_BLEND_ONE;	//ソースの値を100%使う
-blenddesc.DestBlend = D3D12_BLEND_ONE;	//デストの値を100%使う
+	//減算合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;	//デストからソースを減算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE;	//ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE;	//デストの値を100%使う
 
-//色反転
-blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
-blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;	//1.0f-デストカラーの値
-blenddesc.DestBlend = D3D12_BLEND_ZERO;	//使わない
+	//色反転
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
+	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;	//1.0f-デストカラーの値
+	blenddesc.DestBlend = D3D12_BLEND_ZERO;	//使わない
 
-//半透明合成
-blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
-blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;	//ソースのアルファ値
-blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;	//1.0f-ソースのアルファ値
+	//半透明合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
+	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;	//ソースのアルファ値
+	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;	//1.0f-ソースのアルファ値
 
-//頂点レイアウトの設定
-pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
-pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
+	//頂点レイアウトの設定
+	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
+	pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
 
-//図形の形状設定
-pipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//図形の形状設定
+	pipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-//その他設定
-pipelineDesc.NumRenderTargets = 1;//描画対象は一つ
-pipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//0～255指定のRGBA
-pipelineDesc.SampleDesc.Count = 1;//ピクセルにつき一回サンプリング
+	//その他設定
+	pipelineDesc.NumRenderTargets = 1;//描画対象は一つ
+	pipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//0～255指定のRGBA
+	pipelineDesc.SampleDesc.Count = 1;//ピクセルにつき一回サンプリング
 
-//デスクリプタレンジの設定
-D3D12_DESCRIPTOR_RANGE descriptorRange{};
-descriptorRange.NumDescriptors = 1;//一度の描画に使うテクスチャが1枚なので1
-descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-descriptorRange.BaseShaderRegister = 0;//テクスチャレジスタ0番
-descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	//デスクリプタレンジの設定
+	D3D12_DESCRIPTOR_RANGE descriptorRange{};
+	descriptorRange.NumDescriptors = 1;//一度の描画に使うテクスチャが1枚なので1
+	descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange.BaseShaderRegister = 0;//テクスチャレジスタ0番
+	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-//ルートパラメータの設定
-D3D12_ROOT_PARAMETER rootParams[3] = {};
-//定数バッファ0番
-rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
-rootParams[0].Descriptor.ShaderRegister = 0;	//定数バッファ番号
-rootParams[0].Descriptor.RegisterSpace = 0;		//デフォルト値
-rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
-//テクスチャレジスタ0番
-rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;	//定数バッファビュー
-rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;	//デスクリプタレンジ
-rootParams[1].DescriptorTable.NumDescriptorRanges = 1;		//デスクリプタレンジ数
-rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
-//定数バッファ1番
-rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
-rootParams[2].Descriptor.ShaderRegister = 1;	//定数バッファ番号
-rootParams[2].Descriptor.RegisterSpace = 0;		//デフォルト値
-rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
-//テクスチャサンプラーの設定
-D3D12_STATIC_SAMPLER_DESC samplerDesc{};
-samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//横繰り返し(タイリング)
-samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//縦繰り返し(タイリング)
-samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//実行繰り返し(タイリング)
-samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;	//ボーダーの時は黒
-samplerDesc.Filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;				//全てリニア補間
-samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;									//ミニマップ最大値
-samplerDesc.MinLOD = 0.0f;												//ミニマップ最小値
-samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;			//ピクセルシェーダーからのみ使用可能
+	//ルートパラメータの設定
+	D3D12_ROOT_PARAMETER rootParams[3] = {};
+	//定数バッファ0番
+	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
+	rootParams[0].Descriptor.ShaderRegister = 0;	//定数バッファ番号
+	rootParams[0].Descriptor.RegisterSpace = 0;		//デフォルト値
+	rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
+	//テクスチャレジスタ0番
+	rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;	//定数バッファビュー
+	rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;	//デスクリプタレンジ
+	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;		//デスクリプタレンジ数
+	rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
+	//定数バッファ1番
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
+	rootParams[2].Descriptor.ShaderRegister = 1;	//定数バッファ番号
+	rootParams[2].Descriptor.RegisterSpace = 0;		//デフォルト値
+	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
+	//テクスチャサンプラーの設定
+	D3D12_STATIC_SAMPLER_DESC samplerDesc{};
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//横繰り返し(タイリング)
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//縦繰り返し(タイリング)
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//実行繰り返し(タイリング)
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;	//ボーダーの時は黒
+	samplerDesc.Filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;				//全てリニア補間
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;									//ミニマップ最大値
+	samplerDesc.MinLOD = 0.0f;												//ミニマップ最小値
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;			//ピクセルシェーダーからのみ使用可能
 
-//ルートシグネチャ
-//ID3D12RootSignature* rootSignature;
-//ルートシグネチャの設定
-D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
-rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-rootSignatureDesc.pParameters = rootParams;	//ルートパラメータの先頭アドレス
-rootSignatureDesc.NumParameters = _countof(rootParams);		//ルートパラメータ数
-rootSignatureDesc.pStaticSamplers = &samplerDesc;
-rootSignatureDesc.NumStaticSamplers = 1;
-//ルートシグネチャのシリアライズ
-ID3DBlob* rootSigBlob = nullptr;
-result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
-	&rootSigBlob, &errorBlob);
-assert(SUCCEEDED(result));
-result = device->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(),
-	IID_PPV_ARGS(&rootSignature));
-assert(SUCCEEDED(result));
-rootSigBlob->Release();
-//パイプラインにルートシグネチャをセット
-pipelineDesc.pRootSignature = rootSignature;
+	//ルートシグネチャ
+	//ID3D12RootSignature* rootSignature;
+	//ルートシグネチャの設定
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	rootSignatureDesc.pParameters = rootParams;	//ルートパラメータの先頭アドレス
+	rootSignatureDesc.NumParameters = _countof(rootParams);		//ルートパラメータ数
+	rootSignatureDesc.pStaticSamplers = &samplerDesc;
+	rootSignatureDesc.NumStaticSamplers = 1;
+	//ルートシグネチャのシリアライズ
+	ID3DBlob* rootSigBlob = nullptr;
+	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
+		&rootSigBlob, &errorBlob);
+	assert(SUCCEEDED(result));
+	result = device->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(),
+		IID_PPV_ARGS(&rootSignature));
+	assert(SUCCEEDED(result));
+	rootSigBlob->Release();
+	//パイプラインにルートシグネチャをセット
+	pipelineDesc.pRootSignature = rootSignature;
 
-//パイプラインステートの生成
-pipelineState = nullptr;
-result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
-assert(SUCCEEDED(result));
-	};
+	//パイプラインステートの生成
+	pipelineState = nullptr;
+	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
+	assert(SUCCEEDED(result));
+};
 
-	void Mesh::Update()
-	{
+void Mesh::Update()
+{
 
-	};
+};
 
-	void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
-	{
-		//パイプラインステートとルートシグネチャの設定コマンド
-		commandList->SetPipelineState(pipelineState);
-		commandList->SetGraphicsRootSignature(rootSignature);
+void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
+{
+	//パイプラインステートとルートシグネチャの設定コマンド
+	commandList->SetPipelineState(pipelineState);
+	commandList->SetGraphicsRootSignature(rootSignature);
 
-		//プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//プリミティブ形状の設定コマンド
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		//頂点バッファビューの設定コマンド
-		commandList->IASetVertexBuffers(0, 1, &vbView);
+	//頂点バッファビューの設定コマンド
+	commandList->IASetVertexBuffers(0, 1, &vbView);
 
-		constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//RGBA
+	constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//RGBA
 
-		//定数バッファビュー(CBV)の定数コマンド
-		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
-		//SRVヒープの設定コマンド
-		commandList->SetDescriptorHeaps(1, &srvHeap);
-		//SRVヒープの先頭アドレスを取得
-		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
-		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
-		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
-		//定数バッファビュー(CBV)の設定コマンド
-		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+	//定数バッファビュー(CBV)の定数コマンド
+	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+	//SRVヒープの設定コマンド
+	commandList->SetDescriptorHeaps(1, &srvHeap);
+	//SRVヒープの先頭アドレスを取得
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
+	//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+	commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+	//定数バッファビュー(CBV)の設定コマンド
+	commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
-		//インデックスバッファビューの設定コマンド
-		commandList->IASetIndexBuffer(&ibView);
+	//インデックスバッファビューの設定コマンド
+	commandList->IASetIndexBuffer(&ibView);
 
-		//描画コマンド
-		commandList->DrawInstanced(6, 1, 0, 0);
-		//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
-	};
+	//描画コマンド
+	commandList->DrawInstanced(6, 1, 0, 0);
+	//commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
+};
