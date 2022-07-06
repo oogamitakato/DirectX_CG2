@@ -18,17 +18,24 @@ using namespace DirectX;
 #pragma comment(lib,"dxguid.lib")
 
 //定数バッファ用データ構造体(マテリアル)
+/*定数バッファ・・・CPUで動くプログラムの変数群を、GPUで動くプログラマブルシェーダーに定数群（バッファ）として送り込む機構*/
 struct ConstBufferDateMaterial {
 	XMFLOAT4 color; //色(RGBA)
 };
 
-//ウィンドウプロージャ
+//ウィンドウプロシージャ
+/*ウィンドウ・・・コンピュータの操作画面上で個々のソフトウェアに割り当てられた矩形の表示領域*/
+/*ウィンドウプロシージャ・・・ウィンドウメッセージを処理する関数
+メッセージループで取得したメッセージをウィンドウプロシージャに送信し、受け取ったメッセージをウィンドウプロシージャで処理する*/
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	//メッセージに応じてゲーム固有の処理を行う
 	switch (msg) {
 		//ウィンドウが破棄された
 	case WM_DESTROY:
 		//OSに対して、アプリの終了を伝える
+		/*OS・・・コンピューターを動かすためのソフトウェアのこと
+		Operating System オペレーティング システムの略
+		コンピューター全体を管理、制御し、人が使えるようにする役割がある*/
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -38,10 +45,14 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 //Windowsアプリでのエントリーポイント(main関数)
+/*Windows・・・マイクロソフト（Microsoft）社が開発・販売している、コンピュータのオペレーティングシステム（OS）製品のシリーズ名*/
+/*エントリーポイント・・・プログラムの実行段階において、プログラムやルーチンの実行する開始位置のこと
+C言語の標準でのエントリーポイントは、mainという名前の関数の先頭位置*/
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #ifdef _DEBUG
 	//デバッグレイヤーをオンに
+	/*デバッグレイヤー・・・デバッグするための層*/
 	ID3D12Debug* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
@@ -49,6 +60,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #endif
 
 	//コンソールへの文字出力
+	/*コンソール・・・広義でパソコン全般の入力・出力用の装置のことを指し、主にキーボードやディスプレイのこと*/
 	OutputDebugStringA("Hello,DirectX!!\n");
 
 	//ウィンドウサイズ
@@ -58,9 +70,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//ウィンドウクラスの設定
 	WNDCLASSEX w{};
 	w.cbSize = sizeof(WNDCLASSEX);
-	w.lpfnWndProc = (WNDPROC)WindowProc;	//ウィンドウプロージャを設定
+	w.lpfnWndProc = (WNDPROC)WindowProc;	//ウィンドウプロシージャを設定
 	w.lpszClassName = L"DirectXGame";		//ウィンドウクラス名
+											/*ウィンドウクラス・・・「どのようなウィンドウを作るかの定義」のこと
+											アイコン、メニュー、カーソルなどと、ウィンドウプロシージャが定義されている*/
 	w.hInstance = GetModuleHandle(nullptr);	//ウィンドウハンドル
+											/*ウィンドウハンドル・・・コンピュータが各ウィンドウに割り振る管理番号
+											これを指定することで、コンピュータに該当のウィンドウを認識させる*/
 	w.hCursor = LoadCursor(NULL, IDC_ARROW);//カーソル指名
 
 	//ウィンドウクラスをOSに登録する
@@ -89,6 +105,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MSG msg{};//メッセージ
 
 	//DirectX初期化処理 ここから
+	/*DirectX・・・マイクロソフトが開発したゲーム・マルチメディア処理用のAPIの集合*/
+	/*API・・・Application Programming Interfaceの略
+	ソフトウェアからOSの機能を利用するための仕様またはインターフェース(両者の間で情報や信号などをやりとりするための手順や規約を定めたもの)の総称
+	アプリケーションの開発を容易にするためのソフトウェア資源のことをいう*/
 	HRESULT result;
 	ID3D12Device* device = nullptr;
 	IDXGIFactory7* dxgiFactory = nullptr;
@@ -101,10 +121,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//DirectX初期化処理 ここまで
 
 	//DXGIファクトリーの生成
+	/*DXGIファクトリー・・・DXGIの各種オブジェクトを生成するクラス*/
+	/*DXGI・・・DirectX グラフィックス インフラストラクチャー(基盤となる設備や要素のこと)の略
+	アダプターの列挙やスワップチェインの作成等をしてくれる*/
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(result));
 
 	//アダプターの列挙用
+	/*アダプター・・・直訳すれば「適合させるもの」
+	「交流から直流への電流の変換」と「電圧の変換」が主な役割
+	ここではグラフィックボードのアダプタのことを指す*/
 	std::vector<IDXGIAdapter4*> adapters;
 	//ここに特定の名前を持つアダプターオブジェクトが入る
 	IDXGIAdapter4* tmpAdapter = nullptr;
@@ -126,14 +152,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		adapters[i]->GetDesc3(&adapterDesc);
 
 		//ソフトウェアデバイスを回避
+		/*ソフトウェアデバイス・・・ソフトウェアでエミュレーションしているものやオンボードグラフィック*/
+		/*エミュレーション・・・ある装置やソフトウェア、システムの挙動を別のソフトウェアなどによって模倣し、代替として動作させること*/
+		/*オンボードグラフィック・・・パーソナルコンピュータのマザーボード上に搭載されているグラフィックスコントローラ (GPU) のこと*/
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
 			//デバイスを採用してループを抜ける
+			/*デバイス・・・パソコン・タブレット・スマートフォンや、それらと接続して使う装置の総称*/
 			tmpAdapter = adapters[i];
 			break;
 		}
 	}
 
 	//対応レベルの配列
+	/*対応レベル(機能レベル)・・・明確に定義されたGPU機能のセット*/
 	D3D_FEATURE_LEVEL levels[] = {
 		D3D_FEATURE_LEVEL_12_1,
 		D3D_FEATURE_LEVEL_12_0,
@@ -155,12 +186,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//コマンドアロケータを生成
+	/*コマンドアロケータ・・・コマンドリストに積み込むバッファを確保するオブジェクト*/
 	result = device->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(&commandAllocator));
 	assert(SUCCEEDED(result));
 
 	//コマンドリストを生成
+	/*コマンドリスト・・・一連の流れの描画命令をコマンドとして積み込まれたバッファリスト*/
 	result = device->CreateCommandList(0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		commandAllocator, nullptr,
@@ -168,18 +201,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//コマンドキューの設定
+	/*コマンドキュー・・・コマンドの待ち行列*/
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	//コマンドキューを生成
 	result = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 	assert(SUCCEEDED(result));
 
 	//スワップチェーンの設定
+	/*スワップチェーン・・・ダブルバッファリングを簡単に実装する為にDirecctXが用意した仕組み*/
+	/*ダブルバッファリング・・・画面や画像を連続的に書き換える際に、描画領域と同じサイズのバッファ領域をメモリ上に2つ用意して、交互に描画処理を行なう手法*/
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = 1280;
 	swapChainDesc.Height = 720;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;//色情報の書式
 	swapChainDesc.SampleDesc.Count = 1;//マルチサンプルしない
+									   /*マルチサンプル・・・空間アンチエイリアシングの一種であり、コンピュータグラフィックスでジャギーを除去するために使用される手法*/
 	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;//バックバッファ用
+													   /*バックバッファ・・・画面に描画していない方の描画キャンバス*/
 	swapChainDesc.BufferCount = 2;//バッファ数を２つに設定
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;//フリップ後は破棄
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
@@ -190,8 +228,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//デスクリプタヒープの設定
+	/*デスクリプタヒープ・・・GPU上に作られるデスクリプタを保存するための配列*/
+	/*デスクリプタ・・・GPUメモリ上に存在する、様々なデータやバッファの種類や位置、大きさを示す構造体のようなもの*/
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;//レンダーゲットビュー
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;//レンダーターゲットビュー
 	rtvHeapDesc.NumDescriptors = swapChainDesc.BufferCount;//裏表の２つ
 
 	//デスクリプタヒープの生成
@@ -210,8 +250,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//裏か表かでアドレスがずれる
 		rtvHandle.ptr += i * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
 		//レンダーターゲットビューの設定
+		/*レンダーターゲットビュー・・・バックバッファを描画キャンバスとして扱う為のオブジェクト*/
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 		//シェーダーの計算結果をSRGBに変換して書き込む
+		/*シェーダー・・・3次元コンピュータグラフィックスにおいて、シェーディング（陰影処理）を行うコンピュータプログラムのこと
+		「shade」とは「次第に変化させる」「陰影・グラデーションを付ける」という意味
+		「shader」は頂点色やピクセル色などを次々に変化させるもの（より具体的に、狭義の意味で言えば関数）を意味する*/
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		//レンダーターゲットビューの生成
@@ -219,12 +263,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//フェンスの生成
+	/*フェンス・・・CPUとGPUで同期をとるためのDirecctXの仕組み*/
 	ID3D12Fence* fence = nullptr;
 	UINT64 fenceVal = 0;
 
 	result = device->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
 	//DirectInputの初期化
+	/*DirectInput・・・マイクロソフトによって開発されたソフトウェアコンポーネント「Microsoft DirectX」のうちのひとつ
+	マウス、キーボード、ジョイスティック、ゲームコントローラ等を介してユーザーからの入力情報を収集するためのAPI*/
 	IDirectInput8* directInput = nullptr;
 	result = DirectInput8Create(
 		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
@@ -241,6 +288,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//排他制御レベルのセット
+	/*排他制御・・・複数の主体が同じ資源を同時に利用すると競合状態が生じる場合に、ある主体が資源を利用している間、別の主体による資源の利用を制限もしくは禁止する仕組み*/
 	result = keyboard->SetCooperativeLevel(
 		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(result));
@@ -252,6 +300,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	{
 		XMFLOAT3 pos;//xyz座標
 		XMFLOAT2 uv;//uv座標
+					/*UV座標・・・テクスチャ内での位置を表す座標*/
+					/*テクスチャ・・・3Dモデルなどのポリゴンに貼り付ける画像*/
 	};
 
 	//頂点データ
@@ -264,6 +314,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 
 	//インデックスデータ
+	/*頂点インデックス・・・頂点データ配列の要素番号のこと*/
 	unsigned short indices[] = {
 		0, 1, 2,
 		1, 2, 3,
@@ -276,6 +327,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//配列の要素数
 	const size_t imageDataCount = textureWidth * textureHeight;
 	//画像イメージデータ配列
+	/*イメージデータ・・・記憶装置に記録されたデータを、ファイルやフォルダ構造を保ったまま複製・保存したデータのこと*/
 	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount];
 
 	//全ピクセルの色を初期化
@@ -290,13 +342,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
 	//WICテクスチャのロード
+	/*WIC・・・画像コーデックのフレームワーク
+	デジタル画像および画像のメタデータを処理する*/	
 	result = LoadFromWICFile(
 		L"Resources/mario.jpg",
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 
 	ScratchImage mipChain{};
-	//ミニマップ生成
+	//ミップマップ生成
+	/*ミップマップ・・・3次元コンピュータグラフィックスのテクスチャフィルタリングにおいて、メインとなるテクスチャの画像を補完するよう事前計算され最適化された画像群*/
 	result = GenerateMipMaps(
 		scratchImg.GetImages(), scratchImg.GetImageCount(), scratchImg.GetMetadata(),
 		TEX_FILTER_DEFAULT, 0, mipChain);
@@ -306,14 +361,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//読み込んだディフーズテクスチャをSRGBとして使う
+	/*ディフーズ・・・拡散反射光ともよぶ
+	3DCGモデルにマテリアル（材質）を設定するための要素の1つ*/
+	/*SRGB・・・国際電気標準会議（IEC）が定めた国際標準規格の色空間（カラースペース）で、Windowsの基準になっている色空間*/
 	metadata.format = MakeSRGB(metadata.format);
 
 	//ヒープ設定
+	/*ヒープ・・・コンピュータプログラムが利用するメモリ領域の種類の一つ
+	実行時に任意のタイミングで確保や解放が可能なものをヒープ領域というが、これをヒープと略す場合がある*/
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
 	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
 	textureHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 	//リソース設定
+	/*リソース・・・コンピューター用語としてPCの性能を意味するほか、あらゆる資源全般を指す*/
 	D3D12_RESOURCE_DESC textureResourceDesc{};
 	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	textureResourceDesc.Format = metadata.format;
@@ -324,6 +385,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	textureResourceDesc.SampleDesc.Count = 1;
 
 	//テクスチャバッファの生成
+	/*バッファ・・・複数の主体がデータを送受信する際に、処理速度や転送速度の差、タイミングのズレなどを補うためにデータを一時的に蓄えておく記憶装置や記憶領域のこと*/
 	ID3D12Resource* texBuff = nullptr;
 	result = device->CreateCommittedResource(
 		&textureHeapProp,
@@ -340,6 +402,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
 	//頂点バッファの設定
+	/*頂点バッファ・・・頂点データ用のバッファ*/
 	D3D12_HEAP_PROPERTIES heapProp{};//ヒープ設定
 	heapProp.Type = D3D12_HEAP_TYPE_UPLOAD;//GPUへの転送用
 	//リソース設定
@@ -363,6 +426,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//SRVの最大個数
+	/*SRV・・・「シェーダーリソースビュー」の略*/
+	/*シェーダーリソース・・・描画パイプラインで描画の素材となるデータのこと*/
+	/*リソースビュー・・・シェーダーリソースをパイプラインで使う上で、具体的な用途や設定を決める*/
 	const size_t kMaxSRVCount = 2056;
 
 	//デスクリプタヒープの設定
@@ -387,9 +453,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
 	srvDesc.Texture2D.MipLevels = resDesc.MipLevels;
 
-	//全ミニマップについて
+	//全ミップマップについて
 	for (size_t i = 0; i < metadata.mipLevels; i++) {
-		//ミニマップレベルを指定してイメージを取得
+		//ミップマップレベルを指定してイメージを取得
 		const Image* img = scratchImg.GetImage(i, 0, 0);
 		//テクスチャバッファにデータ転送
 		result = texBuff->WriteToSubresource(
@@ -450,6 +516,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ID3D12Resource* constBuffMaterial = nullptr;
 	//定数バッファの生成
+	/*定数バッファ・・・全ピクセル共通のデータを送るときに利用するバッファ*/
 	result = device->CreateCommittedResource(
 		&cbHeapProp,//ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
@@ -470,6 +537,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
 
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
+	/*仮想メモリ・・・ハードディスクの一部をメモリとして利用する際に、ハードディスク上に作成されるファイル*/
 	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
@@ -481,8 +549,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertBuff->Unmap(0, nullptr);
 
 	//頂点バッファビューの生成
+	/*GPUに頂点バッファの場所を教えるためのもの*/
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	//GPU仮想アドレス
+	/*仮想アドレス・・・コンピュータ内のメモリ領域に対して、メモリ装置内での物理的な配置とは独立に割り当てられた所在情報（アドレス）のこと*/
 	vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
 	//頂点バッファのサイズ
 	vbView.SizeInBytes = sizeVB;
@@ -490,15 +560,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vbView.StrideInBytes = sizeof(vertices[0]);
 
 	ID3DBlob* vsBlob = nullptr;//頂点シェーダオブジェクト
+							   /*頂点シェーダ・・・頂点座標を変換するのが役割
+							   モデルデータ（用意した頂点データ）の一点ずつに対して、頂点データのプログラムが一回実行される*/
 	ID3DBlob* psBlob = nullptr;//ピクセルシェーダオブジェクト
+							   /*ピクセルシェーダ・・・描画色の設定が役割
+							   ラスタライザが分解した後の１ピクセルずつに対して、ピクセルシェーダのプログラムが一回実行される*/
 	ID3DBlob* errorBlob = nullptr;//エラーオブジェクト
 
 	//頂点シェーダの読み込みとコンパイル
+	/*コンパイル・・・特定のプログラミング言語を用いて記述されたコンピュータープログラムを他の言語 (普通はコンピューターが実行できるバイナリ言語) を用いて記述された同じプログラムに形を変えること*/
 	result = D3DCompileFromFile(
 		L"BasicVS.hlsl",//シェーダファイル名
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,//インクルード可能にする
 		"main", "vs_5_0",//エントリーポイント名、シェーダーモデル指定
+						 /*エントリーポイント・・・プログラムの実行段階において、プログラムやルーチンの実行する開始位置のこと*/
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,//デバック用設定
 		0,
 		&vsBlob, &errorBlob);
@@ -544,6 +620,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	//頂点レイアウト
+	/*頂点レイアウト・・・グラフィックスパイプラインで頂点一つ分のデータに何を持たせるかは自分で決めることができる*/
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{
 			"POSITION",
@@ -566,6 +643,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 
 	//グラフィックスパイプライン設定
+	/*グラフィックスパイプライン・・・DirectXに限らず、CG描画の一般的な手法
+	ポリゴンを描画するときの流れ*/
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
 
 	//シェーダーの設定
@@ -575,25 +654,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pipelineDesc.PS.BytecodeLength = psBlob->GetBufferSize();
 
 	//サンプルマスクの設定
+	/*マスク・・・対象の特定の部位を処理や加工から保護する覆いの役割を果たすもの*/
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;//標準設定
 
 	//ラスタライザの設定
+	/*ラスタライザ・・・頂点のピクセル化
+	スクリーン座標に変換された図形をピクセルの集まりに分解する
+	この時、ピクセルと頂点の位置関係によって、線形補完が行われる*/
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶしorワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
 	//ブレンドステート
+	/*ブレンドステート・・・ピクセルシェーダで出力した値をレンダーターゲットに書き込む際、もともとあった値とどのようにブレンドするかを指定するためのもの*/
+	/*ブレンド・・・半透明合成、加算合成、減算合成、色反転など*/
 	/*pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
 		= D3D12_COLOR_WRITE_ENABLE_ALL;*/
 
-		//レンダーターゲットのブレンド設定
+	//レンダーターゲットのブレンド設定
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
 
 	blenddesc.BlendEnable = true;	//ブレンドを有効にする
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;	//加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;		//ソースの値を100%使う
+													/*ソースカラー・・・今から描画しようとしている色*/
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;	//デストの値を0%使う
+													/*デスティネーションカラー・・・すでにキャンバスに描かれている色*/
 
 	//加算合成
 	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;	//加算
@@ -635,6 +722,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//ルートパラメータの設定
+	/*ルートパラメーター・・・シェーダーに対して定数バッファなどのシェーダーリソースの割り当てを決める*/
 	D3D12_ROOT_PARAMETER rootParams[2] = {};
 	//定数バッファ0番
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
@@ -648,6 +736,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
 
 	//テクスチャサンプラーの設定
+	/*テクスチャサンプラー・・・テクスチャからどのように色を取り出すかの設定*/
 	D3D12_STATIC_SAMPLER_DESC samplerDesc{};
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//横繰り返し(タイリング)
 	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;					//縦繰り返し(タイリング)
@@ -660,6 +749,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;			//ピクセルシェーダーからのみ使用可能
 
 	//ルートシグネチャ
+	/*ルートパラメータの設定をオブジェクト化したもの*/
 	ID3D12RootSignature* rootSignature;
 	//ルートシグネチャの設定
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
@@ -669,6 +759,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootSignatureDesc.pStaticSamplers = &samplerDesc;
 	rootSignatureDesc.NumStaticSamplers = 1;
 	//ルートシグネチャのシリアライズ
+	/*シリアライズ・・・複数の要素を一列に並べる操作や処理のこと*/
 	ID3DBlob* rootSigBlob = nullptr;
 	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
 		&rootSigBlob, &errorBlob);
@@ -717,6 +808,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
 		// 1 リソースバリアで書き込み可能に変更
+		/*リソースバリア・・・バックバッファを描画できる状態に切り替えたり、描画後にバッファを表示用の状態に戻すコマンド*/
 		D3D12_RESOURCE_BARRIER barrierDesc{};
 		barrierDesc.Transition.pResource = backBuffers[bbIndex];//バックバッファを指定
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;		//表示状態から
@@ -749,6 +841,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//// 4 描画コマンドここから
 
 		//ビューポート設定コマンド
+		/*ビューポート・・・描画領域
+		頂点シェーダからの出力座標はビューポートの領域にマッピングされる*/
 		D3D12_VIEWPORT viewport{};
 		viewport.Width = window_width;	//横幅
 		viewport.Height = window_height;//縦幅
@@ -760,6 +854,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->RSSetViewports(1, &viewport);
 
 		//シザー矩形
+		/*描画領域の絞り込み設定の一種
+		その範囲からずれた部分の描画をカットする*/
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0;									//切り抜き座標左
 		scissorRect.right = scissorRect.left + window_width;	//切り抜き座標右
@@ -773,6 +869,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		//プリミティブ形状の設定コマンド
+		/*描画プリミティブ・・・GPUに描画を命令できる最小の図形単位*/
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		//頂点バッファビューの設定コマンド
