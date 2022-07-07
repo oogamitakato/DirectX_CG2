@@ -259,7 +259,6 @@ Mesh::Mesh(ID3D12Device* device)
 			0.1f, 1000.0f							//前端、奥橋
 	);
 
-
 	//定数バッファに転送
 
 	//値を書き込むと自動的に転送される
@@ -267,6 +266,35 @@ Mesh::Mesh(ID3D12Device* device)
 
 	constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
 	
+	for (int i = 0; i < _countof(indices) / 3; i++)
+	{//三角形一つごとに計算
+
+		//三角形のインデックスを取り出して、一時的な変数に入れる
+		unsigned short index0 = indices[i * 3 + 0];
+		unsigned short index1 = indices[i * 3 + 1];
+		unsigned short index2 = indices[i * 3 + 2];
+
+		//三角形を構成する頂点座標をベクトルに代入
+		XMVECTOR p0 = XMLoadFloat3(&vertices[index0].pos);
+		XMVECTOR p1 = XMLoadFloat3(&vertices[index1].pos);
+		XMVECTOR p2 = XMLoadFloat3(&vertices[index2].pos);
+
+		//p0->p1ベクトル、p1->p2ベクトルを計算
+		XMVECTOR v1 = XMVectorSubtract(p1, p0);
+		XMVECTOR v2 = XMVectorSubtract(p2, p0);
+
+		//外積は両方から垂直なベクトル
+		XMVECTOR normal = XMVector3Cross(v1, v2);
+
+		//正規化
+		normal = XMVector3Normalize(normal);
+
+		//求めた法線を頂点データに代入
+		XMStoreFloat3(&vertices[index0].normal, normal);
+		XMStoreFloat3(&vertices[index1].normal, normal);
+		XMStoreFloat3(&vertices[index2].normal, normal);
+	}
+
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
@@ -342,7 +370,7 @@ Mesh::Mesh(ID3D12Device* device)
 
 	//頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-		{
+		{	//xyz座標
 			"POSITION",
 			0,
 			DXGI_FORMAT_R32G32B32_FLOAT,
@@ -351,7 +379,18 @@ Mesh::Mesh(ID3D12Device* device)
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
 			0
 		},
-		{
+
+		{	//法線ベクトル
+			"NORMAL",
+			0,
+			DXGI_FORMAT_R32G32B32_FLOAT,
+			0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+			0
+		},
+
+		{	//uv座標
 			"TEXCOORD",
 			0,
 			DXGI_FORMAT_R32G32_FLOAT,
@@ -375,7 +414,7 @@ Mesh::Mesh(ID3D12Device* device)
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;//標準設定
 
 	//ラスタライザの設定
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;//背景をカリング
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶしorワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
