@@ -291,7 +291,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//描画初期化ここから
-	Mesh *mesh = new Mesh(device);
+	//3Dオブジェクトの数
+	const size_t kObjectCount = 50;
+	float scaling = 1.0f;
+	float rotationZ = 0.0f;
+	float transformZ = 0.0f;
+
+	Mesh* mesh[kObjectCount] = {};
+
+	for (int i = 0; i < kObjectCount; i++)
+	{
+		mesh[i] = new Mesh(device);
+
+		if (i > 0)
+		{
+			mesh[i]->scale = { scaling, scaling, scaling };
+			mesh[i]->rotation = { 0.0f,0.0f,XMConvertToRadians(rotationZ) };
+			mesh[i]->position = { 0.0f,0.0f,transformZ };
+		}
+		scaling *= 0.9f;
+		transformZ -= 1.0f;
+		//rotationZ += 1800.0f;
+	}
 
 	//ゲームループ
 	while (true) {
@@ -321,7 +342,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			OutputDebugStringA("Hit 0\n");//出力ウィンドウに「Hit 0」と表示
 		}
 
-		mesh->Update(keyboard);
+		for (int i = 0; i < kObjectCount; i++)
+		{
+			mesh[i]->Update(keyboard);
+		}
 
 		//バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -368,7 +392,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//ビューポート設定コマンドを、コマンドリストに積む
 		commandList->RSSetViewports(1, &viewport);
 
-		mesh->Draw(commandList);
+		for (int i = 0; i < kObjectCount; i++)
+		{
+			mesh[i]->Draw(commandList);
+		}
 
 		//シザー矩形
 		D3D12_RECT scissorRect{};

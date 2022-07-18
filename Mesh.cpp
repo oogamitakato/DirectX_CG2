@@ -37,8 +37,17 @@ Mesh::Mesh(ID3D12Device* device)
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 
+	//2枚目
+	TexMetadata metadata2{};
+	ScratchImage scratchImg2{};
+	//WICテクスチャのロード
+	result = LoadFromWICFile(
+		L"Resources/reimu.png",
+		WIC_FLAGS_NONE,
+		&metadata2, scratchImg2);
+
+	//ミップマップ生成
 	ScratchImage mipChain{};
-	//ミニマップ生成
 	result = GenerateMipMaps(
 		scratchImg.GetImages(), scratchImg.GetImageCount(), scratchImg.GetMetadata(),
 		TEX_FILTER_DEFAULT, 0, mipChain);
@@ -46,9 +55,18 @@ Mesh::Mesh(ID3D12Device* device)
 		scratchImg = std::move(mipChain);
 		metadata = scratchImg.GetMetadata();
 	}
+	ScratchImage mipChain2{};
+	result = GenerateMipMaps(
+		scratchImg2.GetImages(), scratchImg2.GetImageCount(), scratchImg2.GetMetadata(),
+		TEX_FILTER_DEFAULT, 0, mipChain2);
+	if (SUCCEEDED(result)) {
+		scratchImg2 = std::move(mipChain2);
+		metadata2 = scratchImg2.GetMetadata();
+	}
 
 	//読み込んだディフーズテクスチャをSRGBとして使う
 	metadata.format = MakeSRGB(metadata.format);
+	metadata2.format = MakeSRGB(metadata2.format);
 
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
@@ -64,6 +82,16 @@ Mesh::Mesh(ID3D12Device* device)
 	textureResourceDesc.DepthOrArraySize = (UINT16)metadata.arraySize;
 	textureResourceDesc.MipLevels = (UINT16)metadata.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
+	//2枚目
+	//リソース設定
+	D3D12_RESOURCE_DESC textureResourceDesc2{};
+	textureResourceDesc2.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureResourceDesc2.Format = metadata2.format;
+	textureResourceDesc2.Width = metadata2.width;//幅
+	textureResourceDesc2.Height = (UINT)metadata2.height;//高さ
+	textureResourceDesc2.DepthOrArraySize = (UINT16)metadata2.arraySize;
+	textureResourceDesc2.MipLevels = (UINT16)metadata2.mipLevels;
+	textureResourceDesc2.SampleDesc.Count = 1;
 
 	//テクスチャバッファの生成
 	ID3D12Resource* texBuff = nullptr;
@@ -74,6 +102,15 @@ Mesh::Mesh(ID3D12Device* device)
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&texBuff));
+	//2枚目
+	ID3D12Resource* texBuff2 = nullptr;
+	result = device->CreateCommittedResource(
+		&textureHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&textureResourceDesc2,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&texBuff2));
 
 	//元データ解放
 	delete[] imageData;
@@ -118,20 +155,9 @@ Mesh::Mesh(ID3D12Device* device)
 	result = device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
 	assert(SUCCEEDED(result));
 
-	//SRVヒープの先頭ハンドルを取得
-	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
-
-	//シェーダーリソースビュー設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};//設定構造体
-	srvDesc.Format = resDesc.Format;
-	srvDesc.Shader4ComponentMapping =
-		D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
-	srvDesc.Texture2D.MipLevels = resDesc.MipLevels;
-
-	//全ミニマップについて
+	//全ミップマップについて
 	for (size_t i = 0; i < metadata.mipLevels; i++) {
-		//ミニマップレベルを指定してイメージを取得
+		//ミップマップレベルを指定してイメージを取得
 		const Image* img = scratchImg.GetImage(i, 0, 0);
 		//テクスチャバッファにデータ転送
 		result = texBuff->WriteToSubresource(
@@ -143,9 +169,47 @@ Mesh::Mesh(ID3D12Device* device)
 		);
 		assert(SUCCEEDED(result));
 	}
+	for (size_t i = 0; i < metadata2.mipLevels; i++) {
+		//ミップマップレベルを指定してイメージを取得
+		const Image* img = scratchImg2.GetImage(i, 0, 0);
+		//テクスチャバッファにデータ転送
+		result = texBuff2->WriteToSubresource(
+			(UINT)i,
+			nullptr,//全領域へコピー
+			img->pixels,//元データアドレス
+			(UINT)img->rowPitch,//1ラインサイズ
+			(UINT)img->slicePitch//1枚サイズ
+		);
+		assert(SUCCEEDED(result));
+	}
+	//SRVヒープの先頭ハンドルを取得
+	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
+
+	//シェーダーリソースビュー設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};//設定構造体
+	srvDesc.Format = textureResourceDesc.Format;
+	srvDesc.Shader4ComponentMapping =
+		D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
+	srvDesc.Texture2D.MipLevels = textureResourceDesc.MipLevels;
 
 	//ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
+
+	//一つハンドル進める
+	incrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	srvHandle.ptr += incrementSize;
+
+	//シェーダーリソースビュー設定(2枚目)
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc2{};//設定構造体
+	srvDesc2.Format = textureResourceDesc2.Format;
+	srvDesc2.Shader4ComponentMapping =
+		D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc2.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャ
+	srvDesc2.Texture2D.MipLevels = textureResourceDesc2.MipLevels;
+
+	//ハンドルの指す位置にシェーダーリソースビュー作成
+	device->CreateShaderResourceView(texBuff2, &srvDesc2, srvHandle);
 
 	//インデックスデータ全体のサイズ
 	UINT sizeIB = static_cast<UINT>(sizeof(uint16_t) * _countof(indices));
@@ -556,8 +620,8 @@ void Mesh::Update(IDirectInputDevice8* keyboard)
 	if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT])
 	{
 		//座標を移動する処理
-		if (key[DIK_UP]) { position.z += 1.0f; }
-		else if (key[DIK_DOWN]) { position.z -= 1.0f; }
+		if (key[DIK_UP]) { position.y += 1.0f; }
+		else if (key[DIK_DOWN]) { position.y -= 1.0f; }
 		if (key[DIK_RIGHT]) { position.x += 1.0f; }
 		else if (key[DIK_LEFT]) { position.x -= 1.0f; }
 	}
@@ -603,6 +667,7 @@ void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
 	//SRVヒープの先頭アドレスを取得
 	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
 	//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
+	srvGpuHandle.ptr += incrementSize;
 	commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 	//定数バッファビュー(CBV)の設定コマンド
 	commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
