@@ -594,11 +594,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-	//定数バッファに転送
-	constMapTransform->mat = matView * matProjection;
+	//スケーリング倍率
+	XMFLOAT3 scale = { 0.5f,0.5f,0.5f };
+	//回転角
+	XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
+	//座標
+	XMFLOAT3 position = { 0.0f,0.0f,0.0f };
 
 	//値を書き込むと自動的に転送される
-	float R = 0.0f;
+	float R = 0.5f;
 
 	constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
 
@@ -607,10 +611,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
-	////全頂点に対して
-	//for (int i = 0; i < _countof(vertices); i++) {
-	//	vertMap[i] = vertices[i];	//座標をコピー
-	//}
+	
 	//繋がりを解除
 	vertBuff->Unmap(0, nullptr);
 
@@ -893,7 +894,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// 3 画面クリア           R      G     B     A
-		FLOAT clearColor[] = { R, 0.25f, 0.5f, 0.0f };
+		FLOAT clearColor[] = { 0.0f, 0.25f, 0.5f, 0.0f };
 
 		if (key[DIK_SPACE])//スペースキーが押されていたら
 		{
@@ -902,8 +903,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			clearColor[2] = 0.0f;
 		}
 
+		/*R += 0.01f;
+		constMapMaterial->color = XMFLOAT4(R, 1.0f - R, 0, 0.8f);*/
+
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
+		//カメラ回転処理
 		if (key[DIK_D] || key[DIK_A])
 		{
 			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
@@ -916,8 +921,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
+		//移動処理
+		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT])
+		{
+			//座標を移動する処理
+			if (key[DIK_UP]) { position.y += 1.0f; }
+			else if(key[DIK_DOWN]) {position.y -= 1.0f;}
+			if (key[DIK_RIGHT]) { position.x += 1.0f; }
+			else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+		}
+
+		//ワールド変換行列
+		XMMATRIX matWorld;
+
+		XMMATRIX matScale;	//スケーリング行列
+		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+
+		XMMATRIX matRot;	//回転行列
+		matRot = XMMatrixIdentity();
+		matRot *= XMMatrixRotationZ(XMConvertToRadians(rotation.z));
+		matRot *= XMMatrixRotationX(XMConvertToRadians(rotation.x));
+		matRot *= XMMatrixRotationY(XMConvertToRadians(rotation.y));
+
+		XMMATRIX matTrans;	//平行移動行列
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
+
+		matWorld = XMMatrixIdentity();	//変形をリセット
+		matWorld *= matScale;			//ワールド行列にスケーリングを反映
+		matWorld *= matRot;				//ワールド行列に回転を反映
+		matWorld *= matTrans;			//ワールド行列に平行移動を反映
+
 		//定数バッファに転送
-		constMapTransform->mat = matView * matProjection;
+		constMapTransform->mat = matWorld * matView * matProjection;
 
 		//全頂点に対して
 		for (int i = 0; i < _countof(vertices); i++) {
