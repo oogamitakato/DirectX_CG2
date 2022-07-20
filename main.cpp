@@ -312,10 +312,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y      z       u      v
-		{{  0.0f, 100.0f, 0.0f}, {0.0f, 1.0f}},//左下
-		{{  0.0f,   0.0f, 0.0f}, {0.0f, 0.0f}},//左上
-		{{100.0f, 100.0f, 0.0f}, {1.0f, 1.0f}},//右上
-		{{100.0f,   0.0f, 0.0f}, {1.0f, 0.0f}},//右上
+		{{-50.0f, -50.0f, 0.0f}, {0.0f, 1.0f}},//左下
+		{{-50.0f,  50.0f, 0.0f}, {0.0f, 0.0f}},//左上
+		{{ 50.0f, -50.0f, 0.0f}, {1.0f, 1.0f}},//右上
+		{{ 50.0f,  50.0f, 0.0f}, {1.0f, 0.0f}},//右上
 	};
 
 	//インデックスデータ
@@ -572,16 +572,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//単位行列を代入
 	constMapTransform->mat = XMMatrixIdentity();
 
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
-	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_height;
-	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
-
 	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
-		0.0f,2.0f,
-		0.0f,2.0f,
+		-1.0f, 2.0f / window_width,
+		-2.0f / window_height,1.0f,
 		0.0f,1.0f
 	);
+
+	//透視投影行列の計算
+	XMMATRIX matProjection = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),			//上下角度45度
+		(float)window_width / window_height,//アスペクト比
+		0.1f, 1000.0f						//前端、奥端
+	);
+	//ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -100);	//視点座標
+	XMFLOAT3 target(0, 0, 0);	//注視点座標
+	XMFLOAT3 up(0, 1, 0);		//上方向ベクトル
+
+	float angle = 0.0f;	//カメラの回転角
+
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+	//定数バッファに転送
+	constMapTransform->mat = matView * matProjection;
 
 	//値を書き込むと自動的に転送される
 	float R = 0.0f;
@@ -879,7 +893,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// 3 画面クリア           R      G     B     A
-		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };
+		FLOAT clearColor[] = { R, 0.25f, 0.5f, 0.0f };
 
 		if (key[DIK_SPACE])//スペースキーが押されていたら
 		{
@@ -889,6 +903,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		if (key[DIK_D] || key[DIK_A])
+		{
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_A]) { angle -= XMConvertToRadians(1.0f); }
+
+			//angleラジアンだけY軸まわりに回転
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		}
+
+		//定数バッファに転送
+		constMapTransform->mat = matView * matProjection;
 
 		//全頂点に対して
 		for (int i = 0; i < _countof(vertices); i++) {
