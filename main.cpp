@@ -19,8 +19,13 @@ using namespace DirectX;
 
 //定数バッファ用データ構造体(マテリアル)
 /*定数バッファ・・・CPUで動くプログラムの変数群を、GPUで動くプログラマブルシェーダーに定数群（バッファ）として送り込む機構*/
-struct ConstBufferDateMaterial {
+struct ConstBufferDataMaterial {
 	XMFLOAT4 color; //色(RGBA)
+};
+
+//定数バッファ用データ構造体(3D変換行列)
+struct ConstBufferDataTransform {
+	XMMATRIX mat;	//3D変換行列
 };
 
 //ウィンドウプロシージャ
@@ -307,10 +312,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y      z       u      v
-		{{-0.4f, -0.7f, 0.0f}, {0.0f, 1.0f}},//左下
-		{{-0.4f, +0.7f, 0.0f}, {0.0f, 0.0f}},//左上
-		{{+0.4f, -0.7f, 0.0f}, {1.0f, 1.0f}},//右上
-		{{+0.4f, +0.7f, 0.0f}, {1.0f, 0.0f}},//右上
+		{{  0.0f, 100.0f, 0.0f}, {0.0f, 1.0f}},//左下
+		{{  0.0f,   0.0f, 0.0f}, {0.0f, 0.0f}},//左上
+		{{100.0f, 100.0f, 0.0f}, {1.0f, 1.0f}},//右上
+		{{100.0f,   0.0f, 0.0f}, {1.0f, 0.0f}},//右上
 	};
 
 	//インデックスデータ
@@ -343,7 +348,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ScratchImage scratchImg{};
 	//WICテクスチャのロード
 	/*WIC・・・画像コーデックのフレームワーク
-	デジタル画像および画像のメタデータを処理する*/	
+	デジタル画像および画像のメタデータを処理する*/
 	result = LoadFromWICFile(
 		L"Resources/mario.jpg",
 		WIC_FLAGS_NONE,
@@ -507,7 +512,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//リソース設定
 	D3D12_RESOURCE_DESC cbResourceDesc{};
 	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	cbResourceDesc.Width = (sizeof(ConstBufferDateMaterial) + 0xff) & ~0xff;	//256バイアラインメント
+	cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;	//256バイアラインメント
 	cbResourceDesc.Height = 1;
 	cbResourceDesc.DepthOrArraySize = 1;
 	cbResourceDesc.MipLevels = 1;
@@ -527,9 +532,56 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(result));
 
 	//定数バッファのマッピング
-	ConstBufferDateMaterial* constMapMaterial = nullptr;
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
 	assert(SUCCEEDED(result));
+
+	//定数バッファの生成(3D変換行列)
+	ID3D12Resource* constBuffTransform = nullptr;
+	ConstBufferDataTransform* constMapTransform = nullptr;
+
+	{
+		//ヒープ設定
+		D3D12_HEAP_PROPERTIES cbHeapProp{};
+		cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;	//GPUへの転送用
+		//リソース設定
+		D3D12_RESOURCE_DESC cbResourceDesc{};
+		cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;	//256バイアラインメント
+		cbResourceDesc.Height = 1;
+		cbResourceDesc.DepthOrArraySize = 1;
+		cbResourceDesc.MipLevels = 1;
+		cbResourceDesc.SampleDesc.Count = 1;
+		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+		//定数バッファの生成
+		result = device->CreateCommittedResource(
+			&cbHeapProp,//ヒープ設定
+			D3D12_HEAP_FLAG_NONE,
+			&cbResourceDesc,//リソース設定
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&constBuffTransform));
+		assert(SUCCEEDED(result));
+
+		//定数バッファのマッピング
+		result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);//マッピング
+		assert(SUCCEEDED(result));
+	}
+
+	//単位行列を代入
+	constMapTransform->mat = XMMatrixIdentity();
+
+	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
+	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_height;
+	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+		0.0f,2.0f,
+		0.0f,2.0f,
+		0.0f,1.0f
+	);
 
 	//値を書き込むと自動的に転送される
 	float R = 0.0f;
@@ -671,7 +723,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
 		= D3D12_COLOR_WRITE_ENABLE_ALL;*/
 
-	//レンダーターゲットのブレンド設定
+		//レンダーターゲットのブレンド設定
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;//RGBA全てのチャンネルを描画
 
@@ -723,7 +775,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ルートパラメータの設定
 	/*ルートパラメーター・・・シェーダーに対して定数バッファなどのシェーダーリソースの割り当てを決める*/
-	D3D12_ROOT_PARAMETER rootParams[2] = {};
+	D3D12_ROOT_PARAMETER rootParams[3] = {};
 	//定数バッファ0番
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	//定数バッファビュー
 	rootParams[0].Descriptor.ShaderRegister = 0;	//定数バッファ番号
@@ -734,6 +786,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParams[1].DescriptorTable.pDescriptorRanges = &descriptorRange;	//デスクリプタレンジ
 	rootParams[1].DescriptorTable.NumDescriptorRanges = 1;		//デスクリプタレンジ数
 	rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	//全てのシェーダーから見える
+	//定数バッファ1番
+	rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParams[2].Descriptor.ShaderRegister = 1;
+	rootParams[2].Descriptor.RegisterSpace = 0;
+	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	//テクスチャサンプラーの設定
 	/*テクスチャサンプラー・・・テクスチャからどのように色を取り出すかの設定*/
@@ -885,6 +942,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
 		//SRVヒープの先頭にあるSRVをルートパラメータ1番に設定
 		commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+		//定数バッファビュー(CBV)の設定コマンド
+		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
