@@ -519,9 +519,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	cbResourceDesc.SampleDesc.Count = 1;
 	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	ID3D12Resource* constBuffMaterial = nullptr;
 	//定数バッファの生成
 	/*定数バッファ・・・全ピクセル共通のデータを送るときに利用するバッファ*/
+	ID3D12Resource* constBuffMaterial = nullptr;
+
 	result = device->CreateCommittedResource(
 		&cbHeapProp,//ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
@@ -601,10 +602,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//座標
 	XMFLOAT3 position = { 0.0f,0.0f,0.0f };
 
-	//値を書き込むと自動的に転送される
-	float R = 0.5f;
+	//色を変える徐々に変える変数
+	float colorChange = 0.0f;
+	int isColorChangePlus = 0;
 
-	constMapMaterial->color = XMFLOAT4(R, 0, 0, 0.5f);//RGBAで半透明の赤
+	//値を書き込むと自動的に転送される
+	constMapMaterial->color = XMFLOAT4(0, 0, 0, 0.5f);//RGBAで半透明の赤
 
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	/*仮想メモリ・・・ハードディスクの一部をメモリとして利用する際に、ハードディスク上に作成されるファイル*/
@@ -903,9 +906,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			clearColor[2] = 0.0f;
 		}
 
-		/*R += 0.01f;
-		constMapMaterial->color = XMFLOAT4(R, 1.0f - R, 0, 0.8f);*/
-
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		//カメラ回転処理
@@ -954,11 +954,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//定数バッファに転送
 		constMapTransform->mat = matWorld * matView * matProjection;
 
+		//色を徐々に変化させる
+		if (colorChange >= 1.0f)
+		{
+			isColorChangePlus = 0;
+		}
+		else if (colorChange <= 0.0f)
+		{
+			isColorChangePlus = 1;
+		}
+
+		if (isColorChangePlus == 0)
+		{
+			colorChange -= 0.01f;
+		}
+		else
+		{
+			colorChange += 0.01f;
+		}
+
 		//全頂点に対して
 		for (int i = 0; i < _countof(vertices); i++) {
 			vertMap[i] = vertices[i];	//座標をコピー
 		}
-
 		//// 4 描画コマンドここから
 
 		//ビューポート設定コマンド
@@ -996,9 +1014,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
-		constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//RGBA
-
-		//定数バッファビュー(CBV)の定数コマンド
+		//定数バッファビュー(CBV)の設定コマンド
 		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 		//SRVヒープの設定コマンド
 		commandList->SetDescriptorHeaps(1, &srvHeap);
@@ -1011,6 +1027,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//インデックスバッファビューの設定コマンド
 		commandList->IASetIndexBuffer(&ibView);
+
+		constMapMaterial->color = XMFLOAT4(colorChange, 1.0f - colorChange, 1.0f, 1.0f);//RGBA
 
 		//描画コマンド
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
