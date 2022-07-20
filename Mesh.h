@@ -2,10 +2,12 @@
 #include <d3d12.h>
 #include <DirectXTex.h>
 #include <dinput.h>
+#include <wrl.h>
 #include "Mesh.h"
 #include "Global.h"
 
 using namespace DirectX;
+using namespace Microsoft::WRL;
 
 class Mesh
 {
@@ -30,7 +32,7 @@ public:
 
 	//メンバ変数
 	HRESULT result;
-	ID3D12Device* device;
+	ComPtr<ID3D12Device> device;
 
 	//頂点データ
 	Vertex vertices[24] = {
@@ -93,15 +95,15 @@ public:
 	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
 	Vertex* vertMap = nullptr;
 	//パイプラインステートの生成
-	ID3D12PipelineState* pipelineState;
+	ComPtr<ID3D12PipelineState> pipelineState;
 	//ルートシグネチャ
-	ID3D12RootSignature* rootSignature;
+	ComPtr<ID3D12RootSignature> rootSignature;
 	//頂点バッファビューの生成
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 	//定数バッファのマッピング
 	ConstBufferDateMaterial* constMapMaterial;
-	ID3D12Resource* constBuffMaterial;
-	ID3D12Resource* constBuffTransform = nullptr;
+	ComPtr<ID3D12Resource> constBuffMaterial;
+	ComPtr<ID3D12Resource> constBuffTransform;
 	ConstBufferDateTransform* constMapTransform = nullptr;
 
 	//インデックスバッファビューの生成
