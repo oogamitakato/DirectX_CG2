@@ -5,8 +5,14 @@ SamplerState smp : register(s0);		//0番スロットに指定されたサンプラー
 
 float4 main(VSOutput input) : SV_TARGET
 {
+	float3 light = normalize(float3(1,-1,1));	//右下奥向きのライト
+	float diffuse = saturate(dot(-light, input.normal));	//diffuseを[0,1]の範囲にClampする
+	float brightness = diffuse + 0.3f;	//アンビエント光を0.3として計算
+	float4 texcolor = float4(tex.Sample(smp, input.uv));
+
+	return float4(texcolor.rgb * brightness, texcolor.a);	//画像(影付き)
+	//return float4(brightness, brightness, brightness, 1) * color;	//輝度をRGBに代入して出力
 	//return float4(tex.Sample(smp, input.uv) * color);	//画像
 	//return float4(input.uv,1,1) * color;	//グラデーション
-	return float4(input.normal,1);	//シェーディング込み
 	//return color;	//colorをそのまま
 }
