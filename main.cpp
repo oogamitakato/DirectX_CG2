@@ -304,61 +304,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	struct Vertex
 	{
 		XMFLOAT3 pos;//xyz座標
-		//XMFLOAT2 normal;//法線ベクトル
+		XMFLOAT3 normal;//法線ベクトル
 		XMFLOAT2 uv;//uv座標
 					/*UV座標・・・テクスチャ内での位置を表す座標*/
 					/*テクスチャ・・・3Dモデルなどのポリゴンに貼り付ける画像*/
 	};
 
-	////頂点データ
-	//Vertex vertices[] = {
-	//	//x      y      z       u      v
-	//	{{-50.0f, -50.0f, 0.0f}, {0.0f, 1.0f}},//左下
-	//	{{-50.0f,  50.0f, 0.0f}, {0.0f, 0.0f}},//左上
-	//	{{ 50.0f, -50.0f, 0.0f}, {1.0f, 1.0f}},//右上
-	//	{{ 50.0f,  50.0f, 0.0f}, {1.0f, 0.0f}},//右上
-	//};
-
-	////インデックスデータ
-	///*頂点インデックス・・・頂点データ配列の要素番号のこと*/
-	//unsigned short indices[] = {
-	//	0, 1, 2,
-	//	1, 2, 3,
-	//};
-
 	//頂点データ
 	Vertex vertices[] = {
 		//x      y      z      u    v
 		//前
-		{{-5.0f, -5.0f, -5.0f},  {0.0f,1.0f}},//左下
-		{{-5.0f,  5.0f, -5.0f},  {0.0f,0.0f}},//左上
-		{{ 5.0f, -5.0f, -5.0f},  {1.0f,1.0f}},//右下
-		{{ 5.0f,  5.0f, -5.0f},  {1.0f,0.0f}},//右上
+		{{-5.0f, -5.0f, -5.0f}, {}, {0.0f,1.0f}},//左下
+		{{-5.0f,  5.0f, -5.0f}, {}, {0.0f,0.0f}},//左上
+		{{ 5.0f, -5.0f, -5.0f}, {}, {1.0f,1.0f}},//右下
+		{{ 5.0f,  5.0f, -5.0f}, {}, {1.0f,0.0f}},//右上
 		//後
-		{{ 5.0f, -5.0f, 5.0f},  {1.0f,1.0f}},//右下
-		{{ 5.0f,  5.0f, 5.0f},  {1.0f,0.0f}},//右上
-		{{-5.0f, -5.0f, 5.0f},  {0.0f,1.0f}},//左下
-		{{-5.0f,  5.0f, 5.0f},  {0.0f,0.0f}},//左上
+		{{ 5.0f, -5.0f, 5.0f}, {}, {1.0f,1.0f}},//右下
+		{{ 5.0f,  5.0f, 5.0f}, {}, {1.0f,0.0f}},//右上
+		{{-5.0f, -5.0f, 5.0f}, {}, {0.0f,1.0f}},//左下
+		{{-5.0f,  5.0f, 5.0f}, {}, {0.0f,0.0f}},//左上
 		//左
-		{{-5.0f, -5.0f, -5.0f},  {0.0f,1.0f}},//左下
-		{{-5.0f, -5.0f,  5.0f},  {0.0f,0.0f}},//左上
-		{{-5.0f,  5.0f, -5.0f},  {1.0f,1.0f}},//右下
-		{{-5.0f,  5.0f,  5.0f},  {1.0f,0.0f}},//右上
+		{{-5.0f, -5.0f, -5.0f}, {}, {0.0f,1.0f}},//左下
+		{{-5.0f, -5.0f,  5.0f}, {}, {0.0f,0.0f}},//左上
+		{{-5.0f,  5.0f, -5.0f}, {}, {1.0f,1.0f}},//右下
+		{{-5.0f,  5.0f,  5.0f}, {}, {1.0f,0.0f}},//右上
 		//右
-		{{ 5.0f,  5.0f, -5.0f},  {1.0f,1.0f}},//右下
-		{{ 5.0f,  5.0f,  5.0f},  {1.0f,0.0f}},//右上
-		{{ 5.0f, -5.0f, -5.0f},  {0.0f,1.0f}},//左下
-		{{ 5.0f, -5.0f,  5.0f},  {0.0f,0.0f}},//左上
+		{{ 5.0f,  5.0f, -5.0f}, {}, {1.0f,1.0f}},//右下
+		{{ 5.0f,  5.0f,  5.0f}, {}, {1.0f,0.0f}},//右上
+		{{ 5.0f, -5.0f, -5.0f}, {}, {0.0f,1.0f}},//左下
+		{{ 5.0f, -5.0f,  5.0f}, {}, {0.0f,0.0f}},//左上
 		//下
-		{{-5.0f, -5.0f, -5.0f},  {0.0f,1.0f}},//左下
-		{{05.0f, -5.0f, -5.0f},  {0.0f,0.0f}},//左上
-		{{-5.0f, -5.0f,  5.0f},  {1.0f,1.0f}},//右下
-		{{05.0f, -5.0f,  5.0f},  {1.0f,0.0f}},//右上
+		{{-5.0f, -5.0f, -5.0f}, {}, {0.0f,1.0f}},//左下
+		{{05.0f, -5.0f, -5.0f}, {}, {0.0f,0.0f}},//左上
+		{{-5.0f, -5.0f,  5.0f}, {}, {1.0f,1.0f}},//右下
+		{{05.0f, -5.0f,  5.0f}, {}, {1.0f,0.0f}},//右上
 		//上
-		{{-5.0f,  5.0f,  5.0f},  {1.0f,1.0f}},//右下
-		{{05.0f,  5.0f,  5.0f},  {1.0f,0.0f}},//右上
-		{{-5.0f,  5.0f, -5.0f},  {0.0f,1.0f}},//左下
-		{{05.0f,  5.0f, -5.0f},  {0.0f,0.0f}},//左上
+		{{-5.0f,  5.0f,  5.0f}, {}, {1.0f,1.0f}},//右下
+		{{05.0f,  5.0f,  5.0f}, {}, {1.0f,0.0f}},//右上
+		{{-5.0f,  5.0f, -5.0f}, {}, {0.0f,1.0f}},//左下
+		{{05.0f,  5.0f, -5.0f}, {}, {0.0f,0.0f}},//左上
 	};
 
 	//インデックスデータ
@@ -721,6 +705,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 	
+	//全頂点に対して
+	for (int i = 0; i < _countof(vertices); i++)
+	{
+		vertMap[i] = vertices[i];	//座標をコピー
+	}
+
 	//繋がりを解除
 	vertBuff->Unmap(0, nullptr);
 
@@ -798,7 +788,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点レイアウト
 	/*頂点レイアウト・・・グラフィックスパイプラインで頂点一つ分のデータに何を持たせるかは自分で決めることができる*/
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-		{
+		{	//xyz座標
 			"POSITION",
 			0,
 			DXGI_FORMAT_R32G32B32_FLOAT,
@@ -807,7 +797,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
 			0
 		},
-		{
+		{	//法線ベクトル
+			"NORMAL",
+			0,
+			DXGI_FORMAT_R32G32B32_FLOAT,
+			0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+			0
+		},
+		{	//uv座標
 			"TEXCOORD",
 			0,
 			DXGI_FORMAT_R32G32_FLOAT,
@@ -837,7 +836,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*ラスタライザ・・・頂点のピクセル化
 	スクリーン座標に変換された図形をピクセルの集まりに分解する
 	この時、ピクセルと頂点の位置関係によって、線形補完が行われる*/
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶしorワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
